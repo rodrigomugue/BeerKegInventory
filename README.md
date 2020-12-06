@@ -1,6 +1,6 @@
 # BeerKegInventory
 
-## Rodrigo Muñoz Guerrero
+## Language: C++
 ### Last upddate: 12/02/2020
 
 This program was a college project to demonstrate the usage of Data Sctructures and Fundamental Algorithms.\
