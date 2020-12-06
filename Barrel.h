@@ -1,12 +1,21 @@
+/*
+*Rodrigo Muñoz Guerrero
+*A00572858
+*29/11/2020
+*/
+
+//Librerias que se utilizarán en el programa
 #ifndef BARREL_H_INCLUDED
 #define BARREL_H_INCLUDED
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <fstream>
+#include <string>
 
 using namespace std;
 
+// Se crea la clase kegs que representa los vértices de la lista
 class kegs{
 private:
     string name, style, brewery;
@@ -18,8 +27,10 @@ private:
     friend class coldroom;
 };
 
+// Constructor por default, se definen los apuntadores del nodo anterior y siguiente en 0
 kegs::kegs() : prev(0), next(0) {}
 
+// Constructor completo donde se le asignan valores a sus atributos
 kegs::kegs(string name_, string style_, string brewery_, int price_, int lt_, int pint_){
     name_ = name;
     style_ = style;
@@ -29,6 +40,7 @@ kegs::kegs(string name_, string style_, string brewery_, int price_, int lt_, in
     pint_ = pint;
 }
 
+// Se crea la clase coldroom que representa la lista de objetos
 class coldroom{
 private:
     kegs *head;
@@ -44,34 +56,41 @@ public:
     void clear();
     void print();
     void printbeer(kegs *);
-    vector<string> explode(string const &, char);
     void swap(vector<kegs>&, int, int);
 };
 
-coldroom::coldroom() : size(0), head(0) {}
+// Constructor por default de la clase
+coldroom::coldroom() : size(0), head(0), tail(0) {}
 
+// Destructor por default del objeto tipo clase coldroom
 coldroom::~coldroom() {
     clear();
 }
 
-vector<string> coldroom::explode(string const &s, char delim){
-    vector<string> result;
-    istringstream iss(s);
-    for (string token; getline(iss,token,delim);){
-        result.push_back(move(token));
-    }
-    return result;
-}
-
+/*
+* Función que lee el archivo de texto donde se tienen los datos de los barriles de cerveza y
+* crea una matriz de variables tipo string.
+* O(n) ya que hace un ciclo por cada uno de los elementos de la lista de barriles o
+* en otras palabras, de filas en la matriz.
+*/
 vector<vector<string>> coldroom::read() {
-    string line = "", filein;
+    string line, filein;
     vector<vector<string>> dl;
-    vector<string> v;
-    filein = "sign.csv";
-    ifstream myfile (filein);
+    filein = "sign.txt";
+    ifstream myfile(filein);
     if (myfile.is_open()){
         while (getline(myfile,line)){
-            auto v = explode(line,',');
+            vector<string> v;
+            stringstream auxi;
+            auxi << line;
+            string a, b, c, d, e, f;
+            auxi >> a >> b >> c >> d >> e >> f;
+            v.push_back(a);
+            v.push_back(b);
+            v.push_back(c);
+            v.push_back(d);
+            v.push_back(e);
+            v.push_back(f);
             dl.push_back(v);
         }
         myfile.close();
@@ -82,12 +101,19 @@ vector<vector<string>> coldroom::read() {
     return dl;
 }
 
+/*
+* Esta funcion utiliza la matriz creada en la funcion read() para crear los objetos
+* de tipo kegs ó, ingresa los datos de cada barril de cerveza. A la vez que crea
+* los objetos, crea la lista doblemente dirigida con cada nodo siendo un objeto tipo kegs.
+* Complejidad O(n) ya que hace un ciclo for del tamaño de la lista de objetos o en otras
+* palabras, del número de filas en la matriz.
+*/
 vector<kegs> coldroom::add(){
-    kegs *NewKeg, *p;
-    int i=1;
+    kegs *NewKeg;
     vector<kegs> Tap;
     vector<vector<string>> dl = read();
-    for (i;i<dl.size()-1;i++){
+    int sze = dl.size();
+    for (int i=1;i<(sze);i++){
             NewKeg = new kegs();
             NewKeg->name = dl[i][0];
             NewKeg->style = dl[i][1];
@@ -95,10 +121,9 @@ vector<kegs> coldroom::add(){
             NewKeg->price = stoi(dl[i][3]);
             NewKeg->lt = stoi(dl[i][4]);
             NewKeg->pint = stoi(dl[i][5]);
-            if (i = 1){
-                NewKeg->next = head;
-                head->prev = NewKeg;
+            if (i == 1){
                 head = NewKeg;
+                tail = NewKeg;
             }
             else{
                 tail->next = NewKeg;
@@ -107,11 +132,15 @@ vector<kegs> coldroom::add(){
             }
             Tap.push_back(*NewKeg);
             size++;
-            i++;
     }
     return Tap;
 }
 
+/*
+* Esta funcion borra todos los elementos de la lista con la operación "delete"
+* porque son objetos creados en el heap con la operación "new"
+* Complejidad O(n) ya que hace lo mismo para cada objeto de la lista.
+*/
 void coldroom::clear(){
     kegs *p, *q;
     p = head;
@@ -124,6 +153,12 @@ void coldroom::clear(){
     size = 0;
 }
 
+/*
+* Función que imprime la matriz creada con la funcion read()
+* Complejidad O(n*a) siendo "a" los atributos de los objetos ya que sigue dos ciclos for anidados
+* en los que uno pasa por cada fila y el ciclo interno, por cada columna y cada columna representa
+* un atributo del objeto.
+*/
 void coldroom::print(){
     int i = 0;
     vector<vector<string>> dl = read();
@@ -142,6 +177,11 @@ void coldroom::print(){
     }
 }
 
+/*
+* Funcion auxiliar para la funcion sort, intercambia un objeto por otro dados sus índices
+* en el vector.
+* Complejidad O(1) porque solo se definen variables directas, no se tienen ciclos.
+*/
 void coldroom::swap(vector<kegs> &v,int i, int j){
     kegs aux;
     aux = v[i];
@@ -149,6 +189,13 @@ void coldroom::swap(vector<kegs> &v,int i, int j){
     v[j] = aux;
 }
 
+/*
+* Funcion que utiliza el método de ordenamiento de burbuja dependiendo el atributo
+* que el usuario ingresa ya sea el precio o el tamaño del vaso en que se sirve.
+* La funcion tambien crea un archivo llamado "sort.txt" donde imprime el nuevo
+* orden de los objetos con sus atributos después de ser ordenado.
+* Complejidad O(n^2) por el proceso de ordenamiento de burbuja.
+*/
 void coldroom::sort(const vector<kegs> &source){
     vector<kegs> v(source);
     int pos;
@@ -183,16 +230,15 @@ void coldroom::sort(const vector<kegs> &source){
 	}
 	ofstream myfileout("sort.txt");
 	if (myfileout.is_open()){
-    cout << "NUM    BEER    STYLE    BREWERY     PRICE     KEG LT    PINT/ML";
-    myfileout << "NUM    BEER    STYLE    BREWERY     PRICE     KEG LT    PINT/ML";
-    for (int i = 0; i<= v.size(); i++){
+    cout << "NUM    BEER    STYLE    BREWERY     PRICE     KEG LT    PINT/ML\n";
+    myfileout << "NUM    BEER    STYLE    BREWERY     PRICE     KEG LT    PINT/ML\n";
+    for (int i = 0; i<= v.size()-1; i++){
         cout << i << "  ";
         myfileout << i << "  ";
         cout << v[i].name << "   " << v[i].style << "   " << v[i].brewery << "   ";
         cout << v[i].price << "   " << v[i].lt << "   " << v[i].pint << endl;
         myfileout << v[i].name << "   " << v[i].style << "   " << v[i].brewery << "   ";
         myfileout << v[i].price << "   " << v[i].lt << "   " << v[i].pint << endl;
-        i++;
     }
 	myfileout.close();
 	}
@@ -201,6 +247,8 @@ void coldroom::sort(const vector<kegs> &source){
 	}
 }
 
+// Esta funcion imprime los atributos de un objeto ingresado. Auxiliar de get().
+// Complejidad O(1) ya que solo son impresiones y no hay ciclos.
 void coldroom::printbeer(kegs *p){
     cout << "NAME: " << p->name << endl;
     cout << "STYLE: " << p->style << endl;
@@ -210,6 +258,13 @@ void coldroom::printbeer(kegs *p){
     cout << "PINT ML: " << p->pint << endl;
 }
 
+/*
+* Funcion que busca un atributo en específico entre los objetos de la lista.
+* Se define el tipo de atributo que se quiere y se ingresa el valor del atributo
+* y el programa recorre la lista hasta encontrar al objeto con ese valor de atributo.
+* Complejidad O(n) ya que en el peor caso, recorre toda la lista si es que el atributo
+* lo tiene el último objeto o si no existe un objeto con ese valor de atributo.
+*/
 void coldroom::get(){
     int pos, resp, f = 0;
     kegs *p;
